@@ -10,7 +10,7 @@ pool:
   vmImage: 'macOS-10.14'
 
 variables:
-  - group: AndroidKeystore
+  - group: Mobile
 
 steps:
 - task: NodeTool@0
@@ -23,6 +23,7 @@ steps:
   displayName: 'Install node dependencies'
 
 - task: Gradle@2
+  displayName: 'Build APK'
   inputs:
     workingDirectory: 'src/android'
     gradleWrapperFile: 'src/android/gradlew'
@@ -31,37 +32,38 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     tasks: 'assembleRelease'
 
-- task: AndroidSigning@2
+- task: AndroidSigning@3
+  displayName: 'Sign APK'
   inputs:
     apkFiles: '**/*.apk'
-    jarsign: true
-    jarsignerKeystoreFile: 'android.keystore'
-    jarsignerKeystorePassword: '$(jarsignerKeystorePassword)'
-    jarsignerKeystoreAlias: 'react-native-pipeline-key'
-    jarsignerKeyPassword: '$(jarsignerKeyPassword)'
+    apksignerKeystoreFile: 'my-upload-key.keystore'
+    apksignerKeystorePassword: '$(AndroidKeyStorePassword)'
+    apksignerKeystoreAlias: '$(AndroidKeyAlias)'
+    apksignerKeyPassword: '$(AndroidKeyAliasPassword)'
     zipalign: true
 
 - script: mv src/android/app/build/outputs/apk/release/app-release-unsigned.apk ReactNativePipeline$(Build.BuildNumber).apk
   displayName: 'Rename apk'
 
 - task: PublishBuildArtifacts@1
+  displayName: 'Publish APK to artifacts'
   inputs:
     pathtoPublish: ReactNativePipeline$(Build.BuildNumber).apk
     artifactName: drop
     publishLocation: 'container'
 
-- task: AppCenterDistribute@3
-  displayName: "Create a release on App Center"
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-  inputs:
-    serverEndpoint: 'app-center'
-    appSlug: 'stafford.williams/ReactNativePipeline-Android'
-    appFile: 'ReactNativePipeline$(Build.BuildNumber).apk'
-    releaseNotesOption: 'input'
-    releaseNotesInput: |
-      $(Build.SourceVersionMessage)
-      
-      latest source: '$(Build.SourceVersion)'
-      
-      An automated release from Azure DevOps
-    destinationType: 'groups'
+#- task: AppCenterDistribute@3
+#  displayName: "Create a release on App Center"
+#  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+#  inputs:
+#    serverEndpoint: 'app-center'
+#    appSlug: 'stafford.williams/ReactNativePipeline-Android'
+#    appFile: 'ReactNativePipeline$(Build.BuildNumber).apk'
+#    releaseNotesOption: 'input'
+#    releaseNotesInput: |
+#      $(Build.SourceVersionMessage)
+#      
+#      latest source: '$(Build.SourceVersion)'
+#      
+#      An automated release from Azure DevOps
+#    destinationType: 'groups'
