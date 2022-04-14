@@ -79,7 +79,7 @@ steps:
       git pull --rebase origin $(Build.SourceBranchName)
       git push origin $(Build.SourceBranchName)
       git push --tags
-    displayName: Bump commit
+    displayName: 'Bump commit'
 
 #- task: AppCenterDistribute@3
 #  displayName: "Create a release on App Center"
