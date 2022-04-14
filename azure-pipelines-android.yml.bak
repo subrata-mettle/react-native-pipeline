@@ -4,7 +4,12 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/java
 
 trigger:
-- master
+  branches:
+    include:
+    - master
+    - releases/*
+    exclude:
+    - releases/old*
 
 pool:
   vmImage: 'macos-latest'
@@ -22,7 +27,7 @@ steps:
     versionSpec: '12.16.1'
 
 - script: yarn install
-  workingDirectory: src
+  #workingDirectory: src
   displayName: 'Install node dependencies'
 - script: |
     # Disable autocommit on version bump 
@@ -75,15 +80,19 @@ steps:
     publishLocation: 'container'
 
 - script: |
-      tag="mobile_$(NEW_VERSION)"
-      echo "New tag $tag"
-      git config --global credential.helper store
-      git add *
-      git commit -m "Update version from $(OLD_VERSION) to $(NEW_VERSION)"
-      git tag $tag
-      git pull --rebase origin $(Build.SourceBranchName)
-      git push origin $(Build.SourceBranchName)
-      git push --tags
+    
+
+    tag="mobile_$(NEW_VERSION)"
+    echo "New tag $tag"
+    git config --global credential.helper store
+    git add *
+    git commit -m "Update version from $(OLD_VERSION) to $(NEW_VERSION)"
+    git tag $tag
+    git pull --rebase origin $(Build.SourceBranchName)
+    git push origin $(Build.SourceBranchName)
+    git push --tags    
+  displayName: 'Bump commit'
+
 - script: |
     
 
