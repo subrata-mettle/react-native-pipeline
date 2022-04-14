@@ -18,15 +18,35 @@ steps:
   inputs:
     versionSpec: '12.16.1'
 
-- script: npm install
+- script: yarn install
   workingDirectory: src
   displayName: 'Install node dependencies'
+- script: |
+      # Disable autocommit on version bump 
+      yarn config set version-sign-git-tag false
+      yarn config set version-git-tag false
+      yarn config set version-commit-hooks false
+      # Checkout branch where the build is triggered
+      git checkout $(Build.SourceBranchName)
+      # Extract existing version of package.json
+      oldVer=$(jq -r ".version" package.json)
+      # Bump version
+      yarn version --patch
+      # Add bumped version to staging
+      git add *
+      # Extract new version of package.json
+      newVer=$(jq -r ".version" package.json)
+      # Set environment variables
+      echo "##vso[task.setvariable variable=OLD_VERSION]$oldVer"
+      echo "##vso[task.setvariable variable=NEW_VERSION]$newVer"
+    displayName: 'Bump version and set variables'
 
 - task: Gradle@2
   displayName: 'Build APK'
   inputs:
     workingDirectory: 'src/android'
     gradleWrapperFile: 'src/android/gradlew'
+    options: '-PversionName=$(NEW_VERSION) -PversionCode=$(Build.BuildId)'
     gradleOptions: '-Xmx3072m'
     publishJUnitResults: false
     testResultsFiles: '**/TEST-*.xml'
@@ -51,6 +71,16 @@ steps:
     pathtoPublish: ReactNativePipeline$(Build.BuildNumber).apk
     artifactName: drop
     publishLocation: 'container'
+- script: |
+      tag="mobile_$(NEW_VERSION)"
+      echo "New tag $tag"
+      git add *
+      git commit -m "Update version from $(OLD_VERSION) to $(NEW_VERSION)"
+      git tag $tag
+      git pull --rebase origin $(Build.SourceBranchName)
+      git push origin $(Build.SourceBranchName)
+      git push --tags
+    displayName: Bump commit
 
 #- task: AppCenterDistribute@3
 #  displayName: "Create a release on App Center"
