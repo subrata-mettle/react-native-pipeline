@@ -13,13 +13,16 @@ variables:
   - group: Mobile
 
 steps:
+- checkout: self
+  persistCredentials: true
+  
 - task: NodeTool@0
   displayName: 'Install Node'
   inputs:
     versionSpec: '12.16.1'
 
 - script: yarn install
-  workingDirectory: src
+  #workingDirectory: src
   displayName: 'Install node dependencies'
 - script: |
     # Disable autocommit on version bump 
@@ -29,13 +32,13 @@ steps:
     # Checkout branch where the build is triggered
     git checkout $(Build.SourceBranchName)
     # Extract existing version of package.json
-    oldVer=$(jq -r ".version" src/package.json)
+    oldVer=$(jq -r ".version" package.json)
     # Bump version
     yarn version --patch
     # Add bumped version to staging
     git add *
     # Extract new version of package.json
-    newVer=$(jq -r ".version" src/package.json)
+    newVer=$(jq -r ".version" package.json)
     # Set environment variables
     echo "##vso[task.setvariable variable=OLD_VERSION]$oldVer"
     echo "##vso[task.setvariable variable=NEW_VERSION]$newVer"
@@ -43,8 +46,8 @@ steps:
 - task: Gradle@2
   displayName: 'Build APK'
   inputs:
-    workingDirectory: 'src/android'
-    gradleWrapperFile: 'src/android/gradlew'
+    workingDirectory: 'android'
+    gradleWrapperFile: 'android/gradlew'
     options: '-PversionName=$(NEW_VERSION) -PversionCode=$(Build.BuildId)'
     gradleOptions: '-Xmx3072m'
     publishJUnitResults: false
@@ -61,7 +64,7 @@ steps:
     apksignerKeyPassword: '$(AndroidKeyAliasPassword)'
     zipalign: true
 
-- script: mv src/android/app/build/outputs/apk/release/app-release-unsigned.apk ReactNativePipeline$(Build.BuildNumber).apk
+- script: mv android/app/build/outputs/apk/release/app-release-unsigned.apk ReactNativePipeline$(Build.BuildNumber).apk
   displayName: 'Rename apk'
 
 - task: PublishBuildArtifacts@1
