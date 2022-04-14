@@ -74,13 +74,19 @@ steps:
 - script: |
       tag="mobile_$(NEW_VERSION)"
       echo "New tag $tag"
+      git config --global credential.helper store
       git add *
       git commit -m "Update version from $(OLD_VERSION) to $(NEW_VERSION)"
       git tag $tag
       git pull --rebase origin $(Build.SourceBranchName)
       git push origin $(Build.SourceBranchName)
       git push --tags
+- script: |
+    
 
+    echo "Update version from $(OLD_VERSION) to $(NEW_VERSION)"
+    
+  displayName: 'Project Specific Checkout'
 #- task: AppCenterDistribute@3
 #  displayName: "Create a release on App Center"
 #  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
