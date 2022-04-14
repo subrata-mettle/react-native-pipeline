@@ -29,13 +29,13 @@ steps:
     # Checkout branch where the build is triggered
     git checkout $(Build.SourceBranchName)
     # Extract existing version of package.json
-    oldVer=$(jq -r ".version" package.json)
+    oldVer=$(jq -r ".version" src/package.json)
     # Bump version
     yarn version --patch
     # Add bumped version to staging
     git add *
     # Extract new version of package.json
-    newVer=$(jq -r ".version" package.json)
+    newVer=$(jq -r ".version" src/package.json)
     # Set environment variables
     echo "##vso[task.setvariable variable=OLD_VERSION]$oldVer"
     echo "##vso[task.setvariable variable=NEW_VERSION]$newVer"
