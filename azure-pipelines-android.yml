@@ -70,6 +70,7 @@ steps:
     pathtoPublish: ReactNativePipeline$(Build.BuildNumber).apk
     artifactName: drop
     publishLocation: 'container'
+
 - script: |
       tag="mobile_$(NEW_VERSION)"
       echo "New tag $tag"
@@ -80,7 +81,6 @@ steps:
       git push origin $(Build.SourceBranchName)
       git push --tags
     displayName: 'Bump commit'
-
 #- task: AppCenterDistribute@3
 #  displayName: "Create a release on App Center"
 #  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
